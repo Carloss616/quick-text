@@ -1,0 +1,50 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "quick-text",
+  "title": "Quick Text",
+  "description": "Rewrite, fix, and transform text instantly",
+  "icon": "command-icon.png",
+  "author": "Carloss616",
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "quick-text",
+      "title": "Quick Text",
+      "description": "Modify the currently selected text using your local AI models",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "ollamaUrl",
+      "type": "textfield",
+      "required": false,
+      "title": "Ollama Server URL",
+      "description": "The URL of your local Ollama instance (default: http://localhost:11434)",
+      "default": "http://localhost:11434"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.75.2",
+    "@raycast/utils": "^1.15.0",
+    "ollama": "^0.6.3",
+    "ts-markdown-builder": "^0.6.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.6",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.10",
+    "eslint": "^8.51.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "bunx @raycast/api@latest publish",
+    "typecheck": "tsc --noEmit"
+  }
+}
