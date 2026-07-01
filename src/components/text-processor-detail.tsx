@@ -1,7 +1,6 @@
 import { Color, List, showToast, Toast } from "@raycast/api";
 import type { GenerateRequest, ModelResponse } from "ollama";
 import { type Dispatch, useEffect, useMemo, useState } from "react";
-import * as md from "ts-markdown-builder";
 import { useOllama } from "@/hooks";
 import { formatSize } from "@/utils";
 
@@ -86,16 +85,12 @@ export function TextProcessorDetail({
     };
   }, [request]);
 
-  const markdown = useMemo(
-    () =>
-      md.joinBlocks([
-        ...(thinkingText
-          ? [md.blockquote(thinkingText.replaceAll("\n", "\n> "))]
-          : []),
-        processedText,
-      ]) || " ", // simulate empty with space
-    [thinkingText, processedText],
-  );
+  const markdown = useMemo(() => {
+    const quote = thinkingText
+      ? `> ${thinkingText.replaceAll("\n", "\n> ")}\n\n`
+      : "";
+    return `${quote}${processedText}` || " "; // simulate empty with space
+  }, [thinkingText, processedText]);
 
   return (
     <List.Item.Detail
@@ -103,7 +98,7 @@ export function TextProcessorDetail({
       isLoading={isLoading || isThinking}
       metadata={
         <List.Item.Detail.Metadata>
-          {metadata && Object.keys(metadata) && (
+          {metadata && (
             <>
               {Object.entries(metadata).map(([key, value]) => (
                 <List.Item.Detail.Metadata.Label

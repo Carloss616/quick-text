@@ -8,7 +8,6 @@
         "@raycast/api": "^1.75.2",
         "@raycast/utils": "^1.15.0",
         "ollama": "^0.6.3",
-        "ts-markdown-builder": "^0.6.0",
       },
       "devDependencies": {
         "@raycast/eslint-config": "^1.0.6",
@@ -438,8 +437,6 @@
     "tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
 
     "ts-api-utils": ["ts-api-utils@1.4.3", "", { "peerDependencies": { "typescript": ">=4.2.0" } }, "sha512-i3eMG77UTMD0hZhgRS562pv83RC6ukSAC2GMNWc+9dieh/+jDM5u5YG+NHX6VNDRHQcHwmsTHctP9LhbC3WxVw=="],
-
-    "ts-markdown-builder": ["ts-markdown-builder@0.6.0", "", {}, "sha512-O0ZmHM5fLRgO+FkXol2yCPV5oqbNA3InmuuuXdbwT+j249l+30Ty6gL4B540Ru/D2JEY91qwS+L3irUfDivfjQ=="],
 
     "tslib": ["tslib@1.14.1", "", {}, "sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg=="],
 

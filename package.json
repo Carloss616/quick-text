@@ -5,6 +5,10 @@
   "description": "Rewrite, fix, and transform text instantly",
   "icon": "command-icon.png",
   "author": "Carloss616",
+  "categories": [
+    "Productivity",
+    "Developer Tools"
+  ],
   "license": "MIT",
   "commands": [
     {
@@ -27,8 +31,7 @@
   "dependencies": {
     "@raycast/api": "^1.75.2",
     "@raycast/utils": "^1.15.0",
-    "ollama": "^0.6.3",
-    "ts-markdown-builder": "^0.6.0"
+    "ollama": "^0.6.3"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.6",

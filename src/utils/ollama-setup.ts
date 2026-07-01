@@ -4,16 +4,10 @@ export type SupportedPlatform = "darwin" | "win32";
 
 export type RecommendedModel = "granite4" | "granite4:350m";
 
-export interface RunCommandResult {
+interface RunCommandResult {
   exitCode: number;
   stdout: string;
   stderr: string;
-}
-
-export interface OllamaSetupResult {
-  installedOllama: boolean;
-  pulledModel: boolean;
-  output: string;
 }
 
 function getSupportedPlatform(platform: NodeJS.Platform): SupportedPlatform {
@@ -83,37 +77,33 @@ function getOllamaCheckCommand(platform: SupportedPlatform): string {
 
 export async function setupOllamaAndPullModel(
   model: RecommendedModel,
-): Promise<OllamaSetupResult> {
+): Promise<void> {
   const platform = getSupportedPlatform(process.platform);
-  const installCommand = getOllamaInstallCommand(platform);
-  const checkCommand = getOllamaCheckCommand(platform);
+  const checkResult = await runShellCommand(
+    getOllamaCheckCommand(platform),
+    platform,
+  );
 
-  const checkResult = await runShellCommand(checkCommand, platform);
-  const isOllamaInstalled = checkResult.exitCode === 0;
-
-  let installedOllama = false;
-  if (!isOllamaInstalled) {
-    const installResult = await runShellCommand(installCommand, platform);
+  if (checkResult.exitCode !== 0) {
+    const installResult = await runShellCommand(
+      getOllamaInstallCommand(platform),
+      platform,
+    );
     if (installResult.exitCode !== 0) {
-      const output = [installResult.stdout, installResult.stderr]
-        .filter(Boolean)
-        .join("\n");
-      throw new Error(output || "Failed to install Ollama automatically.");
+      throw new Error(
+        errorOutput(installResult) || "Failed to install Ollama automatically.",
+      );
     }
-    installedOllama = true;
   }
 
   const pullResult = await runShellCommand(`ollama pull ${model}`, platform);
   if (pullResult.exitCode !== 0) {
-    const output = [pullResult.stdout, pullResult.stderr]
-      .filter(Boolean)
-      .join("\n");
-    throw new Error(output || `Failed to pull model ${model}.`);
+    throw new Error(
+      errorOutput(pullResult) || `Failed to pull model ${model}.`,
+    );
   }
+}
 
-  return {
-    installedOllama,
-    pulledModel: true,
-    output: [pullResult.stdout, pullResult.stderr].filter(Boolean).join("\n"),
-  };
+function errorOutput({ stdout, stderr }: RunCommandResult): string {
+  return [stdout, stderr].filter(Boolean).join("\n");
 }

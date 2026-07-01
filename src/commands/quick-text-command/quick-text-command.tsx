@@ -3,11 +3,8 @@ import type { ModelResponse } from "ollama";
 import { useCallback, useState } from "react";
 import { ModelSelectorDropdown, ModelErrorState } from "@/components";
 import { useSelectedText } from "@/hooks";
-import { ChangeToneItem } from "./components/change-tone-item";
-import { FixGrammarItem } from "./components/fix-grammar-item";
-import { ParaphraseItem } from "./components/paraphrase-item";
-import { SummarizeItem } from "./components/summarize-item";
-import { TranslateItem } from "./components/translate-item";
+import { TextActionItem } from "./components/text-action-item";
+import { TEXT_ACTIONS } from "./components/text-actions";
 import { NoModelItem } from "./components/no-model-item";
 
 export function QuickTextCommand() {
@@ -37,7 +34,7 @@ export function QuickTextCommand() {
     >
       {!selectedModel ? (
         <NoModelItem
-          ollamErrorState={modelErrorState}
+          ollamaErrorState={modelErrorState}
           setOllamaErrorState={setModelErrorState}
           refreshModels={refreshModels}
         />
@@ -48,28 +45,14 @@ export function QuickTextCommand() {
           description="Select some text to continue"
         />
       ) : (
-        <>
-          <FixGrammarItem
+        TEXT_ACTIONS.map((action) => (
+          <TextActionItem
+            key={action.title}
+            action={action}
             selectedModel={selectedModel}
             selectedText={selectedText}
           />
-          <ChangeToneItem
-            selectedModel={selectedModel}
-            selectedText={selectedText}
-          />
-          <ParaphraseItem
-            selectedModel={selectedModel}
-            selectedText={selectedText}
-          />
-          <SummarizeItem
-            selectedModel={selectedModel}
-            selectedText={selectedText}
-          />
-          <TranslateItem
-            selectedModel={selectedModel}
-            selectedText={selectedText}
-          />
-        </>
+        ))
       )}
     </List>
   );

@@ -7,7 +7,6 @@ import {
   showToast,
   Toast,
 } from "@raycast/api";
-import * as md from "ts-markdown-builder";
 import { ModelErrorState, ModelSetupActions } from "@/components";
 import {
   getOllamaInstallCommand,
@@ -17,13 +16,103 @@ import {
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
 
 interface OllamaNoModelViewProps {
-  ollamErrorState: ModelErrorState | null;
+  ollamaErrorState: ModelErrorState | null;
   setOllamaErrorState: Dispatch<SetStateAction<ModelErrorState | null>>;
   refreshModels: () => void;
 }
 
+const ERROR_VIEWS: Record<
+  ModelErrorState,
+  { icon: Icon; title: string; subtitle: string; markdown: string }
+> = {
+  [ModelErrorState.OllamaMissing]: {
+    icon: Icon.ExclamationMark,
+    title: "Ollama not available",
+    subtitle: "Install Ollama and pull a starter model",
+    markdown: [
+      "### What this action will do",
+      "",
+      "1. Detect your OS automatically.",
+      "2. Install Ollama with the official command for your OS.",
+      "3. Pull recommended model `granite4:350m` (<1GB).",
+      "4. Refresh model list.",
+      "",
+      "### Install command by OS",
+      "",
+      "```sh",
+      "curl -fsSL https://ollama.com/install.sh | sh",
+      "```",
+      "```powershell",
+      "irm https://ollama.com/install.ps1 | iex",
+      "```",
+      "",
+      "### Model pull command",
+      "",
+      "```sh",
+      "ollama pull granite4:350m",
+      "```",
+      "",
+      "### Recommendation",
+      "",
+      "> Use simple models without integrated thinking to keep quick-text fast.",
+    ].join("\n"),
+  },
+  [ModelErrorState.OllamaNoModels]: {
+    icon: Icon.Stars,
+    title: "No Ollama models found",
+    subtitle: "Download granite4 or granite4:350m",
+    markdown: [
+      "### What this action will do",
+      "",
+      "1. Skip Ollama installation (already detected).",
+      "2. Pull selected model.",
+      "3. Refresh model list after download.",
+      "",
+      "### Model pull commands",
+      "",
+      "```sh",
+      "ollama pull granite4:350m",
+      "```",
+      "```sh",
+      "ollama pull granite4",
+      "```",
+      "",
+      "### Recommendation",
+      "",
+      "> Prefer simple models without integrated thinking. Thinking-enabled models usually slow down quick processing.",
+    ].join("\n"),
+  },
+  [ModelErrorState.OllamaSetupFailed]: {
+    icon: Icon.ExclamationMark,
+    title: "Setup failed",
+    subtitle: "Try again or run manual install",
+    markdown: [
+      "### What happened",
+      "",
+      "Automatic setup failed while installing Ollama or pulling the model.",
+      "",
+      "### What this action will do",
+      "",
+      "Retry installation/pull with confirmation.",
+      "",
+      "### Manual fallback commands",
+      "",
+      "```sh",
+      "curl -fsSL https://ollama.com/install.sh | sh",
+      "```",
+      "```powershell",
+      "irm https://ollama.com/install.ps1 | iex",
+      "```",
+      "",
+      "### Recommendation",
+      "",
+      "> Use simple models without integrated thinking for faster quick-text responses.",
+    ].join("\n"),
+  },
+};
+
 export function NoModelItem({
-  ollamErrorState,
+  ollamaErrorState,
   setOllamaErrorState,
   refreshModels,
 }: OllamaNoModelViewProps) {
@@ -81,7 +170,7 @@ export function NoModelItem({
         setIsSetupRunning(false);
       }
     },
-    [refreshModels],
+    [refreshModels, setOllamaErrorState],
   );
 
   if (isSetupRunning) {
@@ -94,137 +183,23 @@ export function NoModelItem({
     );
   }
 
-  if (ollamErrorState === ModelErrorState.OllamaMissing) {
-    const subtitle = "Install Ollama and pull a starter model";
-    const markdown = md.joinBlocks([
-      md.heading("What this action will do", { level: 3 }),
-      md.orderedList([
-        "Detect your OS automatically.",
-        "Install Ollama with the official command for your OS.",
-        "Pull recommended model `granite4:350m` (<1GB).",
-        "Refresh model list.",
-      ]),
-      md.heading("Install command by OS", { level: 3 }),
-      md.codeBlock("curl -fsSL https://ollama.com/install.sh | sh", {
-        language: "sh",
-      }),
-      md.codeBlock("irm https://ollama.com/install.ps1 | iex", {
-        language: "powershell",
-      }),
-      md.heading("Model pull command", { level: 3 }),
-      md.codeBlock("ollama pull granite4:350m", {
-        language: "sh",
-      }),
-      md.heading("Recommendation", { level: 3 }),
-      md.blockquote(
-        "Use simple models without integrated thinking to keep quick-text fast.",
-      ),
-    ]);
-
+  const view = ollamaErrorState ? ERROR_VIEWS[ollamaErrorState] : null;
+  if (view) {
     return (
       <List.Item
-        icon={Icon.ExclamationMark}
-        title="Ollama not available"
-        subtitle={{
-          value: subtitle,
-          tooltip: subtitle,
-        }}
+        icon={view.icon}
+        title={view.title}
+        subtitle={{ value: view.subtitle, tooltip: view.subtitle }}
         actions={
           <ActionPanel>
             <ModelSetupActions
-              modelErrorState={ollamErrorState}
+              modelErrorState={ollamaErrorState}
               onRunSetupFlow={runSetupFlow}
               onRefreshModels={refreshModels}
             />
           </ActionPanel>
         }
-        detail={<List.Item.Detail markdown={markdown} />}
-      />
-    );
-  }
-
-  if (ollamErrorState === ModelErrorState.OllamaNoModels) {
-    const subtitle = "Download granite4 or granite4:350m";
-    const markdown = md.joinBlocks([
-      md.heading("What this action will do", { level: 3 }),
-      md.orderedList([
-        "Skip Ollama installation (already detected).",
-        "Pull selected model.",
-        "Refresh model list after download.",
-      ]),
-      md.heading("Model pull commands", { level: 3 }),
-      md.codeBlock("ollama pull granite4:350m", {
-        language: "sh",
-      }),
-      md.codeBlock("ollama pull granite4", {
-        language: "sh",
-      }),
-      md.heading("Recommendation", { level: 3 }),
-      md.blockquote(
-        "Prefer simple models without integrated thinking. Thinking-enabled models usually slow down quick processing.",
-      ),
-    ]);
-
-    return (
-      <List.Item
-        icon={Icon.Stars}
-        title="No Ollama models found"
-        subtitle={{
-          value: subtitle,
-          tooltip: subtitle,
-        }}
-        actions={
-          <ActionPanel>
-            <ModelSetupActions
-              modelErrorState={ollamErrorState}
-              onRunSetupFlow={runSetupFlow}
-              onRefreshModels={refreshModels}
-            />
-          </ActionPanel>
-        }
-        detail={<List.Item.Detail markdown={markdown} />}
-      />
-    );
-  }
-
-  if (ollamErrorState === ModelErrorState.OllamaSetupFailed) {
-    const subtitle = "Try again or run manual install";
-    const markdown = md.joinBlocks([
-      md.heading("What happened", { level: 3 }),
-      "Automatic setup failed while installing Ollama or pulling the model.",
-      md.heading("What this action will do", { level: 3 }),
-      "Retry installation/pull with confirmation.",
-      md.heading("Manual fallback commands", { level: 3 }),
-      md.codeBlock("curl -fsSL https://ollama.com/install.sh | sh", {
-        language: "sh",
-      }),
-      md.codeBlock("irm https://ollama.com/install.ps1 | iex", {
-        language: "powershell",
-      }),
-      md.heading("Recommendation", { level: 3 }),
-      md.blockquote(
-        "Use simple models without integrated thinking for faster quick-text responses.",
-      ),
-    ]);
-
-    return (
-      <List.Item
-        icon={Icon.ExclamationMark}
-        title="Setup failed"
-        subtitle={{
-          value: subtitle,
-          tooltip: subtitle,
-        }}
-        actions={
-          <ActionPanel>
-            <ModelSetupActions
-              modelErrorState={ollamErrorState}
-              onRunSetupFlow={runSetupFlow}
-              onRefreshModels={refreshModels}
-            />
-          </ActionPanel>
-        }
-        detail={<List.Item.Detail markdown={markdown} />}
+        detail={<List.Item.Detail markdown={view.markdown} />}
       />
     );
   }

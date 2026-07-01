@@ -19,14 +19,14 @@ export function ModelSetupActions({
         title={
           modelErrorState === ModelErrorState.OllamaMissing
             ? "Install Ollama + Pull Granite4:350m"
-            : "Pull Granite4:350m (~700mb)"
+            : "Pull Granite4:350m (~700Mb)"
         }
         icon={Icon.Download}
         onAction={() => void onRunSetupFlow("granite4:350m")}
       />
       {modelErrorState === ModelErrorState.OllamaNoModels && (
         <Action
-          title="Pull Granite4 (~2gb)"
+          title="Pull Granite4 (~2Gb)"
           icon={Icon.Download}
           onAction={() => void onRunSetupFlow("granite4")}
         />

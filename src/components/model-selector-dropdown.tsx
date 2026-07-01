@@ -1,6 +1,6 @@
 import { List, open, showToast, Toast } from "@raycast/api";
 import type { ModelResponse } from "ollama";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useOllama } from "@/hooks";
 import { formatSize } from "@/utils";
 
@@ -22,69 +22,49 @@ export function ModelSelectorDropdown({
   const ollama = useOllama();
   const [models, setModels] = useState<ModelResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const modelsMapRef = useRef<Record<string, ModelResponse>>({});
 
   useEffect(() => {
     let isCancelled = false;
 
     function applyModels(result: { models: ModelResponse[] }) {
-      if (result.models.length === 0) {
-        setModels([]);
-        modelsMapRef.current = {};
-        onModelError(ModelErrorState.OllamaNoModels);
-        return;
-      }
-
+      if (isCancelled) return;
       setModels(result.models);
-      modelsMapRef.current = result.models.reduce(
-        (acc, model) => {
-          acc[model.name] = model;
-          return acc;
-        },
-        {} as Record<string, ModelResponse>,
-      );
+      if (result.models.length === 0) {
+        onModelError(ModelErrorState.OllamaNoModels);
+      }
     }
 
-    async function openOllamaAndListModels() {
+    async function listWithOllamaOpen() {
       await open("ollama://");
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      const result = await ollama.list();
-      return result;
+      return ollama.list();
     }
 
     async function fetchModels() {
-      if (isCancelled) return;
       setIsLoading(true);
       try {
-        const result = await ollama.list();
-        applyModels(result);
+        applyModels(await ollama.list());
       } catch {
-        try {
-          const retryResult = await openOllamaAndListModels();
-          applyModels(retryResult);
-        } catch {
+        // Ollama may just be closed — open it, then retry twice.
+        for (let attempt = 1; attempt <= 2; attempt++) {
           try {
-            const retryResult = await openOllamaAndListModels();
-            applyModels(retryResult);
+            applyModels(await listWithOllamaOpen());
+            break;
           } catch (retryError) {
+            if (attempt < 2) continue;
             onModelError(ModelErrorState.OllamaMissing);
-
-            const message =
-              retryError instanceof Error
-                ? retryError.message
-                : "Unknown error";
-
             showToast({
               style: Toast.Style.Failure,
               title: "Failed to list models",
-              message,
+              message:
+                retryError instanceof Error
+                  ? retryError.message
+                  : "Unknown error",
             });
           }
         }
       } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
+        if (!isCancelled) setIsLoading(false);
       }
     }
 
@@ -101,10 +81,8 @@ export function ModelSelectorDropdown({
       storeValue
       isLoading={isLoading}
       onChange={(value) => {
-        const model = modelsMapRef.current[value];
-        if (model) {
-          onModelSelected(model);
-        }
+        const model = models.find((m) => m.name === value);
+        if (model) onModelSelected(model);
       }}
       placeholder="Search Ollama models..."
     >
@@ -113,7 +91,6 @@ export function ModelSelectorDropdown({
           key={model.name}
           title={`${model.name} (${formatSize(model.size)})`}
           value={model.name}
-          keywords={[formatSize(model.size)]}
         />
       ))}
     </List.Dropdown>
