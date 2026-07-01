@@ -25,6 +25,24 @@ const ERROR_VIEWS: Record<
   ModelErrorState,
   { icon: Icon; title: string; subtitle: string; markdown: string }
 > = {
+  [ModelErrorState.OllamaNotRunning]: {
+    icon: Icon.Plug,
+    title: "Ollama is not running",
+    subtitle: "Open Ollama, then refresh",
+    markdown: [
+      "### Can't reach Ollama",
+      "",
+      "The Ollama server didn't respond. It's probably closed.",
+      "",
+      "### What to do",
+      "",
+      "1. Run the **Open Ollama** action below.",
+      "2. Wait a couple seconds for it to start.",
+      "3. Run **Refresh Models**.",
+      "",
+      "> Not installed yet? Use **Install Ollama + Pull Granite4:350m** instead.",
+    ].join("\n"),
+  },
   [ModelErrorState.OllamaMissing]: {
     icon: Icon.ExclamationMark,
     title: "Ollama not available",

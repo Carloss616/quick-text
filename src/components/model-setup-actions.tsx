@@ -1,4 +1,4 @@
-import { Action, Icon } from "@raycast/api";
+import { Action, Icon, open } from "@raycast/api";
 import { ModelErrorState } from "@/components";
 import type { RecommendedModel } from "@/utils";
 
@@ -15,9 +15,17 @@ export function ModelSetupActions({
 }: ModelSetupActionsProps) {
   return (
     <>
+      {modelErrorState === ModelErrorState.OllamaNotRunning && (
+        <Action
+          title="Open Ollama"
+          icon={Icon.AppWindow}
+          onAction={() => void open("ollama://")}
+        />
+      )}
       <Action
         title={
-          modelErrorState === ModelErrorState.OllamaMissing
+          modelErrorState === ModelErrorState.OllamaMissing ||
+          modelErrorState === ModelErrorState.OllamaNotRunning
             ? "Install Ollama + Pull Granite4:350m"
             : "Pull Granite4:350m (~700Mb)"
         }
