@@ -56,11 +56,24 @@ const OLLAMA_VIEWS: Record<ModelErrorState, ErrorView> = {
       "3. Pull recommended model `granite4:350m` (<1GB).",
       "4. Refresh model list.",
       "",
+      "### Install command by OS",
+      "",
+      "```sh",
+      "curl -fsSL https://ollama.com/install.sh | sh",
+      "```",
+      "```powershell",
+      "irm https://ollama.com/install.ps1 | iex",
+      "```",
+      "",
       "### Model pull command",
       "",
       "```sh",
       "ollama pull granite4:350m",
       "```",
+      "",
+      "### Recommendation",
+      "",
+      "> Use simple models without integrated thinking to keep quick-text fast.",
     ].join("\n"),
   },
   [ModelErrorState.NoModels]: {
@@ -74,7 +87,18 @@ const OLLAMA_VIEWS: Record<ModelErrorState, ErrorView> = {
       "2. Pull selected model.",
       "3. Refresh model list after download.",
       "",
-      "> Prefer simple models without integrated thinking for faster results.",
+      "### Model pull commands",
+      "",
+      "```sh",
+      "ollama pull granite4:350m",
+      "```",
+      "```sh",
+      "ollama pull granite4",
+      "```",
+      "",
+      "### Recommendation",
+      "",
+      "> Prefer simple models without integrated thinking. Thinking-enabled models usually slow down quick processing.",
     ].join("\n"),
   },
   [ModelErrorState.SetupFailed]: {
@@ -86,11 +110,22 @@ const OLLAMA_VIEWS: Record<ModelErrorState, ErrorView> = {
       "",
       "Automatic setup failed while installing Ollama or pulling the model.",
       "",
-      "### Manual fallback",
+      "### What this action will do",
+      "",
+      "Retry installation/pull with confirmation.",
+      "",
+      "### Manual fallback commands",
       "",
       "```sh",
       "curl -fsSL https://ollama.com/install.sh | sh",
       "```",
+      "```powershell",
+      "irm https://ollama.com/install.ps1 | iex",
+      "```",
+      "",
+      "### Recommendation",
+      "",
+      "> Use simple models without integrated thinking for faster quick-text responses.",
     ].join("\n"),
   },
 };
@@ -173,11 +208,19 @@ export function NoModelItem({
   const provider = useProvider();
   const [isSetupRunning, setIsSetupRunning] = useState(false);
 
-  const runOllamaSetup = useCallback(
-    async (model: RecommendedModel) => {
+  const runSetup = useCallback(
+    async (opts: {
+      confirmTitle: string;
+      confirmMessage: string;
+      toastTitle: string;
+      toastMessage: string;
+      run: () => Promise<void>;
+      successTitle: string;
+      successMessage: string;
+    }) => {
       const userApproved = await confirmAlert({
-        title: "Install Ollama and download model?",
-        message: `This will run CLI commands to install Ollama (if needed) and pull ${model}.`,
+        title: opts.confirmTitle,
+        message: opts.confirmMessage,
         primaryAction: { title: "Continue", style: Alert.ActionStyle.Default },
       });
       if (!userApproved) return;
@@ -186,15 +229,15 @@ export function NoModelItem({
       setOllamaErrorState(null);
       const setupToast = await showToast({
         style: Toast.Style.Animated,
-        title: "Setting up Ollama",
-        message: `Pulling ${model}...`,
+        title: opts.toastTitle,
+        message: opts.toastMessage,
       });
 
       try {
-        await setupOllamaAndPullModel(model);
+        await opts.run();
         setupToast.style = Toast.Style.Success;
-        setupToast.title = "Ollama ready";
-        setupToast.message = `${model} is now available.`;
+        setupToast.title = opts.successTitle;
+        setupToast.message = opts.successMessage;
         refreshModels();
       } catch (error) {
         setOllamaErrorState(ModelErrorState.SetupFailed);
@@ -209,39 +252,34 @@ export function NoModelItem({
     [refreshModels, setOllamaErrorState],
   );
 
-  const runApfelSetup = useCallback(async () => {
-    const userApproved = await confirmAlert({
-      title: "Install and start apfel?",
-      message:
-        "This will run `brew install apfel` (if needed) and `brew services start apfel`.",
-      primaryAction: { title: "Continue", style: Alert.ActionStyle.Default },
-    });
-    if (!userApproved) return;
+  const runOllamaSetup = useCallback(
+    (model: RecommendedModel) =>
+      runSetup({
+        confirmTitle: "Install Ollama and download model?",
+        confirmMessage: `This will run CLI commands to install Ollama (if needed) and pull ${model}.`,
+        toastTitle: "Setting up Ollama",
+        toastMessage: `Pulling ${model}...`,
+        run: () => setupOllamaAndPullModel(model),
+        successTitle: "Ollama ready",
+        successMessage: `${model} is now available.`,
+      }),
+    [runSetup],
+  );
 
-    setIsSetupRunning(true);
-    setOllamaErrorState(null);
-    const setupToast = await showToast({
-      style: Toast.Style.Animated,
-      title: "Setting up apfel",
-      message: "Installing and starting the service...",
-    });
-
-    try {
-      await setupApfel();
-      setupToast.style = Toast.Style.Success;
-      setupToast.title = "Apfel ready";
-      setupToast.message = "Apple Intelligence is now available.";
-      refreshModels();
-    } catch (error) {
-      setOllamaErrorState(ModelErrorState.SetupFailed);
-      setupToast.style = Toast.Style.Failure;
-      setupToast.title = "Automatic setup failed";
-      setupToast.message =
-        error instanceof Error ? error.message : "Unknown error";
-    } finally {
-      setIsSetupRunning(false);
-    }
-  }, [refreshModels, setOllamaErrorState]);
+  const runApfelSetup = useCallback(
+    () =>
+      runSetup({
+        confirmTitle: "Install and start apfel?",
+        confirmMessage:
+          "This will run `brew install apfel` (if needed) and `brew services start apfel`.",
+        toastTitle: "Setting up apfel",
+        toastMessage: "Installing and starting the service...",
+        run: () => setupApfel(),
+        successTitle: "Apfel ready",
+        successMessage: "Apple Intelligence is now available.",
+      }),
+    [runSetup],
+  );
 
   if (isSetupRunning) {
     return (
