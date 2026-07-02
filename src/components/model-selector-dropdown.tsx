@@ -4,10 +4,10 @@ import { useProvider, type Model } from "@/providers";
 import { formatSize } from "@/utils";
 
 export enum ModelErrorState {
-  OllamaNotRunning = "ollama_not_running",
-  OllamaMissing = "ollama_missing",
-  OllamaNoModels = "ollama_no_models",
-  OllamaSetupFailed = "ollama_setup_failed",
+  NotRunning = "not_running",
+  Missing = "missing",
+  NoModels = "no_models",
+  SetupFailed = "setup_failed",
 }
 
 export function ModelSelectorDropdown({
@@ -30,7 +30,7 @@ export function ModelSelectorDropdown({
       if (isCancelled) return;
       setModels(result);
       if (result.length === 0) {
-        onModelError(ModelErrorState.OllamaNoModels);
+        onModelError(ModelErrorState.NoModels);
       }
     }
 
@@ -40,7 +40,7 @@ export function ModelSelectorDropdown({
         applyModels(await provider.listModels());
       } catch (error) {
         // Can't reach the provider — it's probably not running.
-        onModelError(ModelErrorState.OllamaNotRunning);
+        onModelError(ModelErrorState.NotRunning);
         showToast({
           style: Toast.Style.Failure,
           title: "Can't reach the AI provider",

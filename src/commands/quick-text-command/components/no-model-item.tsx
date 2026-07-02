@@ -8,24 +8,25 @@ import {
   Toast,
 } from "@raycast/api";
 import { ModelErrorState, ModelSetupActions } from "@/components";
-import {
-  getOllamaInstallCommand,
-  RecommendedModel,
-  setupOllamaAndPullModel,
-} from "@/utils";
+import { useProvider } from "@/providers";
+import { RecommendedModel, setupApfel, setupOllamaAndPullModel } from "@/utils";
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
 
-interface OllamaNoModelViewProps {
+interface NoModelViewProps {
   ollamaErrorState: ModelErrorState | null;
   setOllamaErrorState: Dispatch<SetStateAction<ModelErrorState | null>>;
   refreshModels: () => void;
 }
 
-const ERROR_VIEWS: Record<
-  ModelErrorState,
-  { icon: Icon; title: string; subtitle: string; markdown: string }
-> = {
-  [ModelErrorState.OllamaNotRunning]: {
+type ErrorView = {
+  icon: Icon;
+  title: string;
+  subtitle: string;
+  markdown: string;
+};
+
+const OLLAMA_VIEWS: Record<ModelErrorState, ErrorView> = {
+  [ModelErrorState.NotRunning]: {
     icon: Icon.Plug,
     title: "Ollama is not running",
     subtitle: "Open Ollama, then refresh",
@@ -43,7 +44,7 @@ const ERROR_VIEWS: Record<
       "> Not installed yet? Use **Install Ollama + Pull Granite4:350m** instead.",
     ].join("\n"),
   },
-  [ModelErrorState.OllamaMissing]: {
+  [ModelErrorState.Missing]: {
     icon: Icon.ExclamationMark,
     title: "Ollama not available",
     subtitle: "Install Ollama and pull a starter model",
@@ -55,27 +56,14 @@ const ERROR_VIEWS: Record<
       "3. Pull recommended model `granite4:350m` (<1GB).",
       "4. Refresh model list.",
       "",
-      "### Install command by OS",
-      "",
-      "```sh",
-      "curl -fsSL https://ollama.com/install.sh | sh",
-      "```",
-      "```powershell",
-      "irm https://ollama.com/install.ps1 | iex",
-      "```",
-      "",
       "### Model pull command",
       "",
       "```sh",
       "ollama pull granite4:350m",
       "```",
-      "",
-      "### Recommendation",
-      "",
-      "> Use simple models without integrated thinking to keep quick-text fast.",
     ].join("\n"),
   },
-  [ModelErrorState.OllamaNoModels]: {
+  [ModelErrorState.NoModels]: {
     icon: Icon.Stars,
     title: "No Ollama models found",
     subtitle: "Download granite4 or granite4:350m",
@@ -86,21 +74,10 @@ const ERROR_VIEWS: Record<
       "2. Pull selected model.",
       "3. Refresh model list after download.",
       "",
-      "### Model pull commands",
-      "",
-      "```sh",
-      "ollama pull granite4:350m",
-      "```",
-      "```sh",
-      "ollama pull granite4",
-      "```",
-      "",
-      "### Recommendation",
-      "",
-      "> Prefer simple models without integrated thinking. Thinking-enabled models usually slow down quick processing.",
+      "> Prefer simple models without integrated thinking for faster results.",
     ].join("\n"),
   },
-  [ModelErrorState.OllamaSetupFailed]: {
+  [ModelErrorState.SetupFailed]: {
     icon: Icon.ExclamationMark,
     title: "Setup failed",
     subtitle: "Try again or run manual install",
@@ -109,22 +86,81 @@ const ERROR_VIEWS: Record<
       "",
       "Automatic setup failed while installing Ollama or pulling the model.",
       "",
-      "### What this action will do",
-      "",
-      "Retry installation/pull with confirmation.",
-      "",
-      "### Manual fallback commands",
+      "### Manual fallback",
       "",
       "```sh",
       "curl -fsSL https://ollama.com/install.sh | sh",
       "```",
-      "```powershell",
-      "irm https://ollama.com/install.ps1 | iex",
+    ].join("\n"),
+  },
+};
+
+const APFEL_VIEWS: Record<ModelErrorState, ErrorView> = {
+  [ModelErrorState.NotRunning]: {
+    icon: Icon.Plug,
+    title: "Apfel is not running",
+    subtitle: "Start the apfel service, then refresh",
+    markdown: [
+      "### Can't reach Apple Intelligence",
+      "",
+      "The apfel server (`localhost:11434`) didn't respond.",
+      "",
+      "### What to do",
+      "",
+      "1. Run **Start Apfel Service** below.",
+      "2. Wait a couple seconds.",
+      "3. Run **Refresh Models**.",
+      "",
+      "```sh",
+      "brew services start apfel",
+      "```",
+    ].join("\n"),
+  },
+  [ModelErrorState.Missing]: {
+    icon: Icon.ExclamationMark,
+    title: "Apfel not available",
+    subtitle: "Install apfel via Homebrew",
+    markdown: [
+      "### What this action will do",
+      "",
+      "1. Install apfel with Homebrew (if needed).",
+      "2. Start the apfel background service.",
+      "3. Refresh model list.",
+      "",
+      "```sh",
+      "brew install apfel",
+      "brew services start apfel",
       "```",
       "",
-      "### Recommendation",
+      "> Requires macOS 26+ on Apple Silicon with Apple Intelligence enabled.",
+    ].join("\n"),
+  },
+  [ModelErrorState.NoModels]: {
+    icon: Icon.Stars,
+    title: "Apple Intelligence unavailable",
+    subtitle: "Ensure Apple Intelligence is enabled",
+    markdown: [
+      "### No model reported",
       "",
-      "> Use simple models without integrated thinking for faster quick-text responses.",
+      "apfel exposes a single on-device model. If none is listed, make sure",
+      "Apple Intelligence is enabled in System Settings and the service is running.",
+    ].join("\n"),
+  },
+  [ModelErrorState.SetupFailed]: {
+    icon: Icon.ExclamationMark,
+    title: "Setup failed",
+    subtitle: "Try again or install manually",
+    markdown: [
+      "### What happened",
+      "",
+      "Automatic setup failed while installing or starting apfel.",
+      "",
+      "### Manual fallback",
+      "",
+      "```sh",
+      "brew install apfel",
+      "brew services start apfel",
+      "```",
     ].join("\n"),
   },
 };
@@ -133,37 +169,21 @@ export function NoModelItem({
   ollamaErrorState,
   setOllamaErrorState,
   refreshModels,
-}: OllamaNoModelViewProps) {
+}: NoModelViewProps) {
+  const provider = useProvider();
   const [isSetupRunning, setIsSetupRunning] = useState(false);
 
-  const runSetupFlow = useCallback(
+  const runOllamaSetup = useCallback(
     async (model: RecommendedModel) => {
-      try {
-        getOllamaInstallCommand(process.platform);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Unknown error";
-        setOllamaErrorState(ModelErrorState.OllamaSetupFailed);
-        await showToast({
-          style: Toast.Style.Failure,
-          title: "Unsupported OS",
-          message,
-        });
-        return;
-      }
       const userApproved = await confirmAlert({
         title: "Install Ollama and download model?",
         message: `This will run CLI commands to install Ollama (if needed) and pull ${model}.`,
-        primaryAction: {
-          title: "Continue",
-          style: Alert.ActionStyle.Default,
-        },
+        primaryAction: { title: "Continue", style: Alert.ActionStyle.Default },
       });
-
       if (!userApproved) return;
+
       setIsSetupRunning(true);
       setOllamaErrorState(null);
-
       const setupToast = await showToast({
         style: Toast.Style.Animated,
         title: "Setting up Ollama",
@@ -177,31 +197,64 @@ export function NoModelItem({
         setupToast.message = `${model} is now available.`;
         refreshModels();
       } catch (error) {
-        setOllamaErrorState(ModelErrorState.OllamaSetupFailed);
-        const message =
-          error instanceof Error ? error.message : "Unknown error";
+        setOllamaErrorState(ModelErrorState.SetupFailed);
         setupToast.style = Toast.Style.Failure;
         setupToast.title = "Automatic setup failed";
-        setupToast.message = message;
+        setupToast.message =
+          error instanceof Error ? error.message : "Unknown error";
       } finally {
-        setOllamaErrorState(null);
         setIsSetupRunning(false);
       }
     },
     [refreshModels, setOllamaErrorState],
   );
 
+  const runApfelSetup = useCallback(async () => {
+    const userApproved = await confirmAlert({
+      title: "Install and start apfel?",
+      message:
+        "This will run `brew install apfel` (if needed) and `brew services start apfel`.",
+      primaryAction: { title: "Continue", style: Alert.ActionStyle.Default },
+    });
+    if (!userApproved) return;
+
+    setIsSetupRunning(true);
+    setOllamaErrorState(null);
+    const setupToast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Setting up apfel",
+      message: "Installing and starting the service...",
+    });
+
+    try {
+      await setupApfel();
+      setupToast.style = Toast.Style.Success;
+      setupToast.title = "Apfel ready";
+      setupToast.message = "Apple Intelligence is now available.";
+      refreshModels();
+    } catch (error) {
+      setOllamaErrorState(ModelErrorState.SetupFailed);
+      setupToast.style = Toast.Style.Failure;
+      setupToast.title = "Automatic setup failed";
+      setupToast.message =
+        error instanceof Error ? error.message : "Unknown error";
+    } finally {
+      setIsSetupRunning(false);
+    }
+  }, [refreshModels, setOllamaErrorState]);
+
   if (isSetupRunning) {
     return (
       <List.EmptyView
         icon={Icon.Hourglass}
-        title="Checking Ollama setup..."
+        title="Checking setup..."
         description="Please wait while we inspect available models."
       />
     );
   }
 
-  const view = ollamaErrorState ? ERROR_VIEWS[ollamaErrorState] : null;
+  const views = provider.id === "apple" ? APFEL_VIEWS : OLLAMA_VIEWS;
+  const view = ollamaErrorState ? views[ollamaErrorState] : null;
   if (view) {
     return (
       <List.Item
@@ -212,7 +265,8 @@ export function NoModelItem({
           <ActionPanel>
             <ModelSetupActions
               modelErrorState={ollamaErrorState}
-              onRunSetupFlow={runSetupFlow}
+              onRunOllamaSetup={runOllamaSetup}
+              onRunApfelSetup={runApfelSetup}
               onRefreshModels={refreshModels}
             />
           </ActionPanel>
@@ -226,7 +280,7 @@ export function NoModelItem({
     <List.EmptyView
       icon={Icon.Stars}
       title="No model selected"
-      description="Select a model to continue. Prefer simple models without thinking for faster results."
+      description="Select a model to continue."
     />
   );
 }

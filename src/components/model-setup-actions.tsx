@@ -1,21 +1,48 @@
 import { Action, Icon, open } from "@raycast/api";
 import { ModelErrorState } from "@/components";
+import { useProvider } from "@/providers";
 import type { RecommendedModel } from "@/utils";
 
 interface ModelSetupActionsProps {
   modelErrorState: ModelErrorState | null;
-  onRunSetupFlow: (model: RecommendedModel) => Promise<void>;
+  onRunOllamaSetup: (model: RecommendedModel) => Promise<void>;
+  onRunApfelSetup: () => Promise<void>;
   onRefreshModels: () => void;
 }
 
 export function ModelSetupActions({
   modelErrorState,
-  onRunSetupFlow,
+  onRunOllamaSetup,
+  onRunApfelSetup,
   onRefreshModels,
 }: ModelSetupActionsProps) {
+  const provider = useProvider();
+
+  if (provider.id === "apple") {
+    const installNeeded =
+      modelErrorState === ModelErrorState.Missing ||
+      modelErrorState === ModelErrorState.NotRunning;
+    return (
+      <>
+        <Action
+          title={
+            installNeeded ? "Install & Start Apfel" : "Start Apfel Service"
+          }
+          icon={Icon.Download}
+          onAction={() => void onRunApfelSetup()}
+        />
+        <Action
+          title="Refresh Models"
+          icon={Icon.ArrowClockwise}
+          onAction={onRefreshModels}
+        />
+      </>
+    );
+  }
+
   return (
     <>
-      {modelErrorState === ModelErrorState.OllamaNotRunning && (
+      {modelErrorState === ModelErrorState.NotRunning && (
         <Action
           title="Open Ollama"
           icon={Icon.AppWindow}
@@ -24,19 +51,19 @@ export function ModelSetupActions({
       )}
       <Action
         title={
-          modelErrorState === ModelErrorState.OllamaMissing ||
-          modelErrorState === ModelErrorState.OllamaNotRunning
+          modelErrorState === ModelErrorState.Missing ||
+          modelErrorState === ModelErrorState.NotRunning
             ? "Install Ollama + Pull Granite4:350m"
             : "Pull Granite4:350m (~700Mb)"
         }
         icon={Icon.Download}
-        onAction={() => void onRunSetupFlow("granite4:350m")}
+        onAction={() => void onRunOllamaSetup("granite4:350m")}
       />
-      {modelErrorState === ModelErrorState.OllamaNoModels && (
+      {modelErrorState === ModelErrorState.NoModels && (
         <Action
           title="Pull Granite4 (~2Gb)"
           icon={Icon.Download}
-          onAction={() => void onRunSetupFlow("granite4")}
+          onAction={() => void onRunOllamaSetup("granite4")}
         />
       )}
       <Action
