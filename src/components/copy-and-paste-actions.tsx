@@ -1,4 +1,4 @@
-import { Action } from "@raycast/api";
+import { Action, Keyboard } from "@raycast/api";
 
 export function CopyAndPasteActions({ content }: { content: string | null }) {
   if (!content) return null;
@@ -8,7 +8,7 @@ export function CopyAndPasteActions({ content }: { content: string | null }) {
       <Action.CopyToClipboard
         title="Copy to Clipboard"
         content={content}
-        shortcut={{ modifiers: ["cmd"], key: "c" }}
+        shortcut={Keyboard.Shortcut.Common.Copy}
       />
     </>
   );

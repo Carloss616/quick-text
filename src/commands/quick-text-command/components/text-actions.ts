@@ -30,7 +30,10 @@ export const TEXT_ACTIONS: TextAction[] = [
     selector: {
       title: "Change Tone",
       metadataLabel: "Tone",
-      shortcut: { modifiers: ["cmd"], key: "t" },
+      shortcut: {
+        macOS: { modifiers: ["cmd"], key: "t" },
+        Windows: { modifiers: ["ctrl"], key: "t" },
+      },
       options: ["Professional", "Casual", "Friendly", "Direct", "Academic"],
     },
   },
@@ -57,7 +60,10 @@ export const TEXT_ACTIONS: TextAction[] = [
     selector: {
       title: "Change Language",
       metadataLabel: "Language",
-      shortcut: { modifiers: ["cmd"], key: "l" },
+      shortcut: {
+        macOS: { modifiers: ["cmd"], key: "l" },
+        Windows: { modifiers: ["ctrl"], key: "l" },
+      },
       options: [
         "English",
         "Spanish",

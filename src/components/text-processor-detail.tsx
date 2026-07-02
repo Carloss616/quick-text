@@ -2,7 +2,7 @@ import { Color, List, showToast, Toast } from "@raycast/api";
 import type { GenerateRequest, ModelResponse } from "ollama";
 import { type Dispatch, useEffect, useMemo, useState } from "react";
 import { useOllama } from "@/hooks";
-import { formatSize } from "@/utils";
+import { formatSize, RELOAD_HINT } from "@/utils";
 
 interface TextProcessorDetailProps {
   selectedModel: ModelResponse;
@@ -111,7 +111,7 @@ export function TextProcessorDetail({
             </>
           )}
           <List.Item.Detail.Metadata.Label
-            title="Original"
+            title={`Selected · (${RELOAD_HINT})`}
             text={{
               value: selectedText,
               color: Color.SecondaryText,
