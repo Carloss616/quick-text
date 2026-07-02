@@ -19,9 +19,9 @@ export function ModelSetupActions({
   const provider = useProvider();
 
   if (provider.id === "apple") {
-    const installNeeded =
-      modelErrorState === ModelErrorState.Missing ||
-      modelErrorState === ModelErrorState.NotRunning;
+    // Missing = not installed (needs brew install); NotRunning = installed but
+    // stopped (just start it). setupApfel() handles both, only the label differs.
+    const installNeeded = modelErrorState === ModelErrorState.Missing;
     return (
       <>
         <Action

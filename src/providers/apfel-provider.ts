@@ -9,6 +9,19 @@ export function parseChatCompletionChunk(data: string): string | null {
   return json.choices?.[0]?.delta?.content ?? null;
 }
 
+// apfel exposes exactly the "apple-foundationmodel" id. Ollama also serves
+// /v1/models on port 11434, so require that id to confirm we're really talking
+// to apfel and not to Ollama sitting on the shared port.
+export function selectAppleModel(body: { data?: { id: string }[] }): Model {
+  const model = body.data?.find((m) => m.id === "apple-foundationmodel");
+  if (!model) {
+    throw new Error(
+      "No Apple Intelligence model here — apfel isn't the server on this port (Ollama may be using 11434).",
+    );
+  }
+  return { id: model.id, label: "Apple Intelligence" };
+}
+
 export function createApfelProvider(baseUrl: string): Provider {
   const url = baseUrl.replace(/\/+$/, "");
 
@@ -19,8 +32,7 @@ export function createApfelProvider(baseUrl: string): Provider {
       const res = await fetch(`${url}/v1/models`);
       if (!res.ok) throw new Error(`apfel responded ${res.status}`);
       const body = (await res.json()) as { data?: { id: string }[] };
-      const id = body.data?.[0]?.id ?? "apple-foundationmodel";
-      return [{ id, label: "Apple Intelligence" }];
+      return [selectAppleModel(body)];
     },
 
     async *generate(

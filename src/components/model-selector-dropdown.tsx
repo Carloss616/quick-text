@@ -1,7 +1,7 @@
 import { List, showToast, Toast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { useProvider, type Model } from "@/providers";
-import { formatSize } from "@/utils";
+import { formatSize, isApfelInstalled } from "@/utils";
 
 export enum ModelErrorState {
   NotRunning = "not_running",
@@ -39,8 +39,14 @@ export function ModelSelectorDropdown({
       try {
         applyModels(await provider.listModels());
       } catch (error) {
-        // Can't reach the provider — it's probably not running.
-        onModelError(ModelErrorState.NotRunning);
+        // Can't reach the provider. For apfel, tell "not installed" apart from
+        // "installed but stopped" so the setup UI offers the right action.
+        const notInstalled =
+          provider.id === "apple" && !(await isApfelInstalled());
+        if (isCancelled) return;
+        onModelError(
+          notInstalled ? ModelErrorState.Missing : ModelErrorState.NotRunning,
+        );
         showToast({
           style: Toast.Style.Failure,
           title: "Can't reach the AI provider",
