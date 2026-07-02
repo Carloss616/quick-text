@@ -33,17 +33,17 @@ Quick Text is a Raycast extension for transforming selected text with local AI. 
 
 1. Pull a model: `ollama pull granite4:350m`
 2. Clone: `git clone https://github.com/Carloss616/quick-text.git`
-3. Install: `bun install`
-4. Run in Raycast: `bun run dev`
+3. Install: `npm install`
+4. Run in Raycast: `npm run dev`
 5. Select text, open Raycast, run "Quick Text", pick an action.
 
 ## Scripts
 
-- `bun run dev` — ray develop (live extension in Raycast)
-- `bun run build` — ray build -e dist
-- `bun run lint` / `bun run fix-lint` — ray lint
-- `bun run typecheck` — tsc --noEmit
-- `bun run publish` — publish to the Raycast Store
+- `npm run dev` — ray develop (live extension in Raycast)
+- `npm run build` — ray build -e dist
+- `npm run lint` / `npm run fix-lint` — ray lint
+- `npm run typecheck` — tsc --noEmit
+- `npm run publish` — publish to the Raycast Store
 
 ## Architecture
 
@@ -69,7 +69,7 @@ Single Raycast command ("quick-text", view mode). Structure under `src/`:
 - TypeScript 5
 - React 19
 - Ollama client ^0.6 (ollama)
-- Bun (package manager), ESLint, Prettier
+- npm (package manager), ESLint, Prettier
 
 ## Roadmap
 

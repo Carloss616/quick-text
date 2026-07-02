@@ -54,8 +54,8 @@ ollama pull granite4:350m
 # 2. Install dependencies and start the extension in Raycast
 git clone https://github.com/Carloss616/quick-text.git
 cd quick-text
-bun install
-bun run dev
+npm install
+npm run dev
 ```
 
 Then select any text, open Raycast, run **Quick Text**, and pick an action.
@@ -70,10 +70,10 @@ Then select any text, open Raycast, run **Quick Text**, and pick an action.
 Other scripts:
 
 ```bash
-bun run build      # ray build -e dist
-bun run lint       # ray lint
-bun run typecheck  # tsc --noEmit
-bun run publish    # publish to the Raycast Store
+npm run build      # ray build -e dist
+npm run lint       # ray lint
+npm run typecheck  # tsc --noEmit
+npm run publish    # publish to the Raycast Store
 ```
 
 </details>
@@ -86,7 +86,7 @@ bun run publish    # publish to the Raycast Store
 | Language | TypeScript 6 |
 | UI | React 19 |
 | Local AI | [Ollama](https://ollama.ai/) via `ollama` `^0.6` |
-| Tooling | Bun · ESLint · Prettier |
+| Tooling | npm · ESLint · Prettier |
 
 <details>
 <summary>📁 Project structure</summary>
