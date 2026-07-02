@@ -246,6 +246,7 @@ export function NoModelItem({
         setupToast.message =
           error instanceof Error ? error.message : "Unknown error";
       } finally {
+        // ponytail: intentionally do NOT clear the error state here, so the SetupFailed view stays visible on failure
         setIsSetupRunning(false);
       }
     },

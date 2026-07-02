@@ -159,6 +159,7 @@ Identical for both providers; only the two provider files know the wire format.
 - `listModels()` throwing = server unreachable → `NotRunning` (unchanged behavior).
 - Apple selected off-Mac → resolver returns Ollama, so no dead/unsupported UI.
 - `generate()` errors surface via the existing failure toast in `text-processor-detail`.
+- Shared port 11434 caveat: because Ollama also serves an OpenAI-compatible `/v1` on 11434, if the user selects "Apple Intelligence" while Ollama (not apfel) is the process bound to 11434, apfel's requests succeed against Ollama and silently stream from the wrong backend (labeled "Apple Intelligence") instead of failing as NotRunning. Inherent to the shared-port design; low probability since only one server binds 11434 at a time.
 
 ## Testing
 

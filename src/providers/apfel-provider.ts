@@ -55,7 +55,13 @@ export function createApfelProvider(baseUrl: string): Provider {
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed.startsWith("data:")) continue;
-          const text = parseChatCompletionChunk(trimmed.slice(5).trim());
+          const data = trimmed.slice(5).trim();
+          let text: string | null;
+          try {
+            text = parseChatCompletionChunk(data);
+          } catch {
+            continue; // ponytail: skip a malformed SSE chunk instead of killing the stream
+          }
           if (text) yield { text };
         }
       }
