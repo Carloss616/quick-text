@@ -1,12 +1,12 @@
 import { Action, ActionPanel, Color, List } from "@raycast/api";
-import type { ModelResponse } from "ollama";
 import { useMemo, useState } from "react";
 import { CopyAndPasteActions, TextProcessorDetail } from "@/components";
+import type { Model, ProviderRequest } from "@/providers";
 import type { TextAction } from "./text-actions";
 
 interface TextActionItemProps {
   action: TextAction;
-  selectedModel: ModelResponse;
+  selectedModel: Model;
   selectedText: string;
 }
 
@@ -18,13 +18,13 @@ export function TextActionItem({
   const [processedText, setProcessedText] = useState<string | null>(null);
   const [option, setOption] = useState(action.selector?.options[0] ?? "");
 
-  const request = useMemo(
+  const request = useMemo<ProviderRequest>(
     () => ({
-      model: selectedModel.name,
+      model: selectedModel.id,
       prompt: action.buildPrompt(selectedText, option),
       system: action.system,
     }),
-    [selectedModel.name, selectedText, option, action],
+    [selectedModel.id, selectedText, option, action],
   );
 
   const metadata = useMemo(

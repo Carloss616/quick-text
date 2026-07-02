@@ -1,13 +1,12 @@
 import { Color, List, showToast, Toast } from "@raycast/api";
-import type { GenerateRequest, ModelResponse } from "ollama";
 import { type Dispatch, useEffect, useMemo, useState } from "react";
-import { useOllama } from "@/hooks";
+import { useProvider, type Model, type ProviderRequest } from "@/providers";
 import { formatSize } from "@/utils";
 
 interface TextProcessorDetailProps {
-  selectedModel: ModelResponse;
+  selectedModel: Model;
   selectedText: string;
-  request: Omit<GenerateRequest, "stream">;
+  request: ProviderRequest;
   setParentProcessedText: Dispatch<React.SetStateAction<string | null>>;
   metadata?: Record<
     string,
@@ -26,14 +25,14 @@ export function TextProcessorDetail({
   setParentProcessedText,
   metadata,
 }: TextProcessorDetailProps) {
-  const ollama = useOllama();
+  const provider = useProvider();
   const [processedText, setProcessedText] = useState<string>("");
   const [thinkingText, setThinkingText] = useState<string>("");
   const [isThinking, setIsThinking] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    let isCancelled = false;
+    const controller = new AbortController();
 
     async function processText() {
       setIsLoading(true);
@@ -46,27 +45,25 @@ export function TextProcessorDetail({
       let fullThinkingText = "";
 
       try {
-        const stream = await ollama.generate({ ...request, stream: true });
-
-        for await (const chunk of stream) {
-          if (isCancelled) {
-            stream.abort();
-            break;
-          }
+        for await (const chunk of provider.generate(
+          request,
+          controller.signal,
+        )) {
+          if (controller.signal.aborted) break;
 
           if (chunk.thinking) {
             setIsThinking(true);
             fullThinkingText += chunk.thinking;
             setThinkingText(fullThinkingText);
-          } else if (chunk.response) {
+          } else if (chunk.text) {
             setIsThinking(false);
-            fullResponseText += chunk.response;
+            fullResponseText += chunk.text;
             setProcessedText(fullResponseText);
             setParentProcessedText(fullResponseText);
           }
         }
       } catch (err) {
-        if (isCancelled) return;
+        if (controller.signal.aborted) return;
         const errorMsg = err instanceof Error ? err.message : String(err);
         showToast({
           style: Toast.Style.Failure,
@@ -74,16 +71,16 @@ export function TextProcessorDetail({
           message: errorMsg,
         });
       } finally {
-        if (!isCancelled) setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     }
 
     processText();
 
     return () => {
-      isCancelled = true;
+      controller.abort();
     };
-  }, [request]);
+  }, [provider, request]);
 
   const markdown = useMemo(() => {
     const quote = thinkingText
@@ -120,16 +117,20 @@ export function TextProcessorDetail({
           <List.Item.Detail.Metadata.Separator />
           <List.Item.Detail.Metadata.Label
             title="Model"
-            text={selectedModel.name}
+            text={selectedModel.label}
           />
-          <List.Item.Detail.Metadata.Label
-            title="Size"
-            text={formatSize(selectedModel.size)}
-          />
-          <List.Item.Detail.Metadata.Label
-            title="Date"
-            text={new Date(selectedModel.modified_at).toDateString()}
-          />
+          {selectedModel.size != null && (
+            <List.Item.Detail.Metadata.Label
+              title="Size"
+              text={formatSize(selectedModel.size)}
+            />
+          )}
+          {selectedModel.date && (
+            <List.Item.Detail.Metadata.Label
+              title="Date"
+              text={new Date(selectedModel.date).toDateString()}
+            />
+          )}
         </List.Item.Detail.Metadata>
       }
     />

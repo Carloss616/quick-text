@@ -1,17 +1,15 @@
 import { Icon, List } from "@raycast/api";
-import type { ModelResponse } from "ollama";
 import { useCallback, useState } from "react";
 import { ModelSelectorDropdown, ModelErrorState } from "@/components";
 import { useSelectedText } from "@/hooks";
+import type { Model } from "@/providers";
 import { TextActionItem } from "./components/text-action-item";
 import { TEXT_ACTIONS } from "./components/text-actions";
 import { NoModelItem } from "./components/no-model-item";
 
 export function QuickTextCommand() {
   const { selectedText, isLoading } = useSelectedText();
-  const [selectedModel, setSelectedModel] = useState<ModelResponse | null>(
-    null,
-  );
+  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
   const [modelErrorState, setModelErrorState] =
     useState<ModelErrorState | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);

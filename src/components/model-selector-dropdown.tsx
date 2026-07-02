@@ -1,7 +1,6 @@
 import { List, showToast, Toast } from "@raycast/api";
-import type { ModelResponse } from "ollama";
 import { useEffect, useState } from "react";
-import { useOllama } from "@/hooks";
+import { useProvider, type Model } from "@/providers";
 import { formatSize } from "@/utils";
 
 export enum ModelErrorState {
@@ -16,21 +15,21 @@ export function ModelSelectorDropdown({
   onModelError,
   refreshToken,
 }: {
-  onModelSelected: (model: ModelResponse) => void;
+  onModelSelected: (model: Model) => void;
   onModelError: (state: ModelErrorState) => void;
   refreshToken: number;
 }) {
-  const ollama = useOllama();
-  const [models, setModels] = useState<ModelResponse[]>([]);
+  const provider = useProvider();
+  const [models, setModels] = useState<Model[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
 
-    function applyModels(result: { models: ModelResponse[] }) {
+    function applyModels(result: Model[]) {
       if (isCancelled) return;
-      setModels(result.models);
-      if (result.models.length === 0) {
+      setModels(result);
+      if (result.length === 0) {
         onModelError(ModelErrorState.OllamaNoModels);
       }
     }
@@ -38,13 +37,13 @@ export function ModelSelectorDropdown({
     async function fetchModels() {
       setIsLoading(true);
       try {
-        applyModels(await ollama.list());
+        applyModels(await provider.listModels());
       } catch (error) {
-        // Can't reach Ollama — it's probably closed. Let the user open it.
+        // Can't reach the provider — it's probably not running.
         onModelError(ModelErrorState.OllamaNotRunning);
         showToast({
           style: Toast.Style.Failure,
-          title: "Can't reach Ollama",
+          title: "Can't reach the AI provider",
           message: error instanceof Error ? error.message : "Unknown error",
         });
       } finally {
@@ -57,7 +56,7 @@ export function ModelSelectorDropdown({
     return () => {
       isCancelled = true;
     };
-  }, [ollama, onModelError, refreshToken]);
+  }, [provider, onModelError, refreshToken]);
 
   return (
     <List.Dropdown
@@ -65,16 +64,20 @@ export function ModelSelectorDropdown({
       storeValue
       isLoading={isLoading}
       onChange={(value) => {
-        const model = models.find((m) => m.name === value);
+        const model = models.find((m) => m.id === value);
         if (model) onModelSelected(model);
       }}
-      placeholder="Search Ollama models..."
+      placeholder="Search models..."
     >
       {models.map((model) => (
         <List.Dropdown.Item
-          key={model.name}
-          title={`${model.name} (${formatSize(model.size)})`}
-          value={model.name}
+          key={model.id}
+          title={
+            model.size != null
+              ? `${model.label} (${formatSize(model.size)})`
+              : model.label
+          }
+          value={model.id}
         />
       ))}
     </List.Dropdown>
