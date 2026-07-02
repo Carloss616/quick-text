@@ -24,6 +24,24 @@
   ],
   "preferences": [
     {
+      "name": "provider",
+      "type": "dropdown",
+      "required": false,
+      "title": "AI Provider",
+      "description": "Ollama, or Apple Intelligence via apfel (macOS + Apple Silicon only). Both use the Server URL below; apfel listens on the same 11434 port.",
+      "default": "ollama",
+      "data": [
+        {
+          "title": "Ollama",
+          "value": "ollama"
+        },
+        {
+          "title": "Apple Intelligence (macOS only)",
+          "value": "apple"
+        }
+      ]
+    },
+    {
       "name": "ollamaUrl",
       "type": "textfield",
       "required": false,
@@ -41,6 +59,7 @@
     "@raycast/eslint-config": "^2.2.0",
     "@types/node": "26.1.0",
     "@types/react": "19.2.17",
+    "bun-types": "^1.3.14",
     "eslint": "^10.6.0",
     "prettier": "^3.9.4",
     "typescript": "^6.0.3"
